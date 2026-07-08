@@ -63,3 +63,58 @@ func Register(c *gin.Context) {
 		"message": "User registered successfully",
 	})
 }
+func Login(c *gin.Context) {
+
+	var req dto.LoginRequest
+
+	// Read request body
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Find user by email
+	var user models.User
+
+	err := database.DB.Where("email = ?", req.Email).First(&user).Error
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Invalid email or password",
+		})
+		return
+	}
+
+	// Compare password
+	err = utils.CheckPassword(user.Password, req.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Invalid email or password",
+		})
+		return
+	}
+
+	// Generate JWT
+	token, err := utils.GenerateJWT(user.ID.String())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to generate token",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"token":   token,
+	})
+}
+func Profile(c *gin.Context) {
+
+	userID, _ := c.Get("user_id")
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Welcome!",
+		"user_id": userID,
+	})
+}
