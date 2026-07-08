@@ -7,6 +7,7 @@ import (
 
 	"github.com/testgithubanjali/url-shortener/internal/config"
 	"github.com/testgithubanjali/url-shortener/internal/database"
+	"github.com/testgithubanjali/url-shortener/internal/routes"
 )
 
 func main() {
@@ -17,8 +18,13 @@ func main() {
 	// Connect to PostgreSQL
 	database.ConnectDB()
 
+	// Create Gin router
 	router := gin.Default()
 
+	// Register all application routes
+	routes.SetupRoutes(router)
+
+	// Health Check API
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "URL Shortener API is running",
@@ -26,5 +32,6 @@ func main() {
 		})
 	})
 
+	// Start the server
 	router.Run(":" + config.AppConfig.Port)
 }
