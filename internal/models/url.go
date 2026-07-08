@@ -10,6 +10,7 @@ import (
 type URL struct {
 	ID          uuid.UUID `gorm:"type:uuid;primaryKey"`
 	UserID      uuid.UUID `gorm:"type:uuid;not null"`
+	User        User      `gorm:"foreignKey:UserID"`
 	OriginalURL string    `gorm:"not null"`
 	ShortCode   string    `gorm:"uniqueIndex;not null"`
 	ClickCount  int       `gorm:"default:0"`
