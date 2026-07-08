@@ -22,4 +22,5 @@ func SetupRoutes(router *gin.Engine) {
 		authorized.GET("/profile", handlers.Profile)
 		authorized.POST("/shorten", handlers.ShortenURL)
 	}
+	router.GET("/:shortCode", handlers.RedirectURL)
 }

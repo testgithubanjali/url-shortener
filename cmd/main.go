@@ -17,6 +17,7 @@ func main() {
 
 	// Connect to PostgreSQL
 	database.ConnectDB()
+	database.ConnectRedis()
 
 	// Create Gin router
 	router := gin.Default()

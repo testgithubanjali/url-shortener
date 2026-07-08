@@ -1,0 +1,5 @@
+package dto
+
+type ShortenURLRequest struct {
+	OriginalURL string `json:"original_url" binding:"required,url"`
+}

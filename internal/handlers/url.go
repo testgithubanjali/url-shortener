@@ -80,3 +80,25 @@ func ShortenURL(c *gin.Context) {
 		"short_url": "http://localhost:8080/" + shortCode,
 	})
 }
+func RedirectURL(c *gin.Context) {
+
+	shortCode := c.Param("shortCode")
+
+	var url models.URL
+
+	err := database.DB.Where("short_code = ?", shortCode).First(&url).Error
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Short URL not found",
+		})
+		return
+	}
+
+	// Increase click count
+	url.ClickCount++
+
+	database.DB.Save(&url)
+
+	// Redirect user
+	c.Redirect(http.StatusFound, url.OriginalURL)
+}
