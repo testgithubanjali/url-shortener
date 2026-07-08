@@ -31,11 +31,14 @@ func ConnectDB() {
 
 	DB = db
 
-	// Automatically create/update database tables
-	err = DB.AutoMigrate(&models.User{})
+	// Auto create/update database tables
+	err = DB.AutoMigrate(
+		&models.User{},
+		&models.URL{},
+	)
 	if err != nil {
-		log.Fatal(" Failed to migrate database:", err)
+		log.Fatal("Failed to migrate database:", err)
 	}
 
-	log.Println("PostgreSQL connected successfully")
+	log.Println(" PostgreSQL connected successfully")
 }
