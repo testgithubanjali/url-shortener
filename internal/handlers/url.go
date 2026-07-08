@@ -29,7 +29,7 @@ func ShortenURL(c *gin.Context) {
 		return
 	}
 
-	// Get logged-in user ID from JWT
+	// Get logged-in user's ID
 	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -57,10 +57,21 @@ func ShortenURL(c *gin.Context) {
 			Where("short_code = ?", code).
 			First(&existingURL).Error
 
+		// Code doesn't exist -> use it
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			shortCode = code
 			break
 		}
+
+		// Some database error occurred
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Database error",
+			})
+			return
+		}
+
+		// Code already exists, generate another one
 	}
 
 	userUUID, err := uuid.Parse(userID.(string))
@@ -71,7 +82,7 @@ func ShortenURL(c *gin.Context) {
 		return
 	}
 
-	// Calculate expiration date
+	// Calculate expiration time
 	var expiresAt *time.Time
 
 	if req.ExpiresInDays > 0 {
@@ -98,37 +109,40 @@ func ShortenURL(c *gin.Context) {
 		"short_url": "http://localhost:" + config.AppConfig.Port + "/" + shortCode,
 	})
 }
-
 func RedirectURL(c *gin.Context) {
 
 	shortCode := c.Param("shortCode")
-
 	cacheKey := "url:" + shortCode
 
 	// Check Redis first
 	originalURL, err := database.RedisClient.Get(database.Ctx, cacheKey).Result()
 
-	if err == nil {
+	switch {
+	case err == nil:
 
 		log.Println("✅ Cache HIT:", shortCode)
 
+		// Increase click count
 		database.DB.Model(&models.URL{}).
 			Where("short_code = ?", shortCode).
 			Update("click_count", gorm.Expr("click_count + 1"))
 
 		c.Redirect(http.StatusFound, originalURL)
 		return
-	}
 
-	if err != nil && !errors.Is(err, redis.Nil) {
+	case errors.Is(err, redis.Nil):
+
+		log.Println("❌ Cache MISS:", shortCode)
+
+	default:
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Redis error",
 		})
 		return
 	}
 
-	log.Println("❌ Cache MISS:", shortCode)
-
+	// Query PostgreSQL
 	var url models.URL
 
 	err = database.DB.
@@ -142,7 +156,7 @@ func RedirectURL(c *gin.Context) {
 		return
 	}
 
-	// Check if URL has expired
+	// Check expiration
 	if url.ExpiresAt != nil && time.Now().After(*url.ExpiresAt) {
 		c.JSON(http.StatusGone, gin.H{
 			"error": "This short URL has expired",
@@ -150,7 +164,7 @@ func RedirectURL(c *gin.Context) {
 		return
 	}
 
-	// Save to Redis for 10 minutes
+	// Cache URL for 10 minutes
 	err = database.RedisClient.Set(
 		database.Ctx,
 		cacheKey,
