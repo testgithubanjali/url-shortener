@@ -16,11 +16,12 @@ var (
 )
 
 func ConnectRedis() {
-
 	addr := fmt.Sprintf("%s:%s",
 		config.AppConfig.RedisHost,
 		config.AppConfig.RedisPort,
 	)
+
+	log.Printf("Connecting to Redis at %s", addr)
 
 	RedisClient = redis.NewClient(&redis.Options{
 		Addr: addr,
@@ -31,5 +32,5 @@ func ConnectRedis() {
 		log.Fatal("❌ Failed to connect Redis:", err)
 	}
 
-	log.Println("✅ Redis connected successfully")
+	log.Println("Redis connected successfully")
 }

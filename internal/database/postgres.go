@@ -14,7 +14,6 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
-
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		config.AppConfig.DBHost,
@@ -24,6 +23,8 @@ func ConnectDB() {
 		config.AppConfig.DBPort,
 	)
 
+	log.Printf("Connecting to PostgreSQL at %s:%s", config.AppConfig.DBHost, config.AppConfig.DBPort)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("❌ Failed to connect to PostgreSQL:", err)
@@ -32,6 +33,7 @@ func ConnectDB() {
 	DB = db
 
 	// Auto create/update database tables
+	log.Println("Running database migrations")
 	err = DB.AutoMigrate(
 		&models.User{},
 		&models.URL{},
@@ -40,5 +42,5 @@ func ConnectDB() {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
-	log.Println(" PostgreSQL connected successfully")
+	log.Println("PostgreSQL connected successfully")
 }

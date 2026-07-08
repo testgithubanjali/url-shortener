@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,22 +12,28 @@ import (
 )
 
 func main() {
+	log.Println("Starting URL shortener service")
 
 	// Load environment variables
 	config.LoadConfig()
+	log.Printf("Configuration loaded for port %s", config.AppConfig.Port)
 
 	// Connect to PostgreSQL
+	log.Println("Connecting to PostgreSQL")
 	database.ConnectDB()
+	log.Println("Connecting to Redis")
 	database.ConnectRedis()
 
 	// Create Gin router
 	router := gin.Default()
 
 	// Register all application routes
+	log.Println("Registering application routes")
 	routes.SetupRoutes(router)
 
 	// Health Check API
 	router.GET("/health", func(c *gin.Context) {
+		log.Println("Health check requested")
 		c.JSON(http.StatusOK, gin.H{
 			"message": "URL Shortener API is running",
 			"port":    config.AppConfig.Port,
@@ -34,5 +41,8 @@ func main() {
 	})
 
 	// Start the server
-	router.Run(":" + config.AppConfig.Port)
+	log.Printf("Server listening on port %s", config.AppConfig.Port)
+	if err := router.Run(":" + config.AppConfig.Port); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 }
