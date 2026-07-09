@@ -182,3 +182,30 @@ func RedirectURL(c *gin.Context) {
 
 	c.Redirect(http.StatusFound, url.OriginalURL)
 }
+func GetAnalytics(c *gin.Context) {
+
+	shortCode := c.Param("shortCode")
+
+	var url models.URL
+
+	err := database.DB.
+		Where("short_code = ?", shortCode).
+		First(&url).Error
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Short URL not found",
+		})
+		return
+	}
+
+	response := dto.AnalyticsResponse{
+		ShortCode:   url.ShortCode,
+		OriginalURL: url.OriginalURL,
+		ClickCount:  url.ClickCount,
+		CreatedAt:   url.CreatedAt,
+		ExpiresAt:   url.ExpiresAt,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
