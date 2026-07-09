@@ -16,11 +16,21 @@ func SetupRoutes(router *gin.Engine) {
 	// Protected Routes
 	authorized := router.Group("/")
 
-	authorized.Use(middleware.JWTAuth())
+	authorized.Use(
+		middleware.RateLimit(),
+		middleware.JWTAuth(),
+	)
 
 	{
 		authorized.GET("/profile", handlers.Profile)
 		authorized.POST("/shorten", handlers.ShortenURL)
+		authorized.GET("/analytics/:shortCode", handlers.GetAnalytics)
 	}
-	router.GET("/:shortCode", handlers.RedirectURL)
+
+	// Public Redirect Route (also rate limited)
+	router.GET(
+		"/:shortCode",
+		middleware.RateLimit(),
+		handlers.RedirectURL,
+	)
 }
